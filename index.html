@@ -3,7 +3,6 @@
 <head>
   <title>Memory Page</title>
 
-  <!-- Uploadcare widget -->
   <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
 
   <style>
@@ -16,12 +15,13 @@
 
     .gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
       margin-top: 30px;
     }
 
-    .gallery img {
+    .gallery img,
+    .gallery video {
       width: 100%;
       border-radius: 8px;
     }
@@ -30,9 +30,9 @@
 
 <body>
   <h1>Shared Memories</h1>
-  <p>Upload and view photos</p>
+  <p>Upload and view photos & videos</p>
 
-  <!-- Upload button -->
+  <!-- Uploadcare uploader -->
   <input
     type="hidden"
     role="uploadcare-uploader"
@@ -47,24 +47,33 @@
     const PUBLIC_KEY = "a263a33adc38d6263eb1";
     const gallery = document.getElementById("gallery");
 
-    // Initialize uploader
     const widget = uploadcare.Widget("#uploader");
 
+    // Handle uploads (including multi-file groups)
     widget.onUploadComplete(function(info) {
-      info.files().forEach(file => {
-        file.done(fileInfo => {
-          addImage(fileInfo.cdnUrl);
+      if (info.isGroup) {
+        info.files().forEach(file => {
+          file.done(fileInfo => addMedia(fileInfo));
         });
-      });
+      } else {
+        addMedia(info);
+      }
     });
 
-    function addImage(url) {
-      const img = document.createElement("img");
-      img.src = url;
-      gallery.prepend(img);
+    function addMedia(fileInfo) {
+      if (fileInfo.isImage) {
+        const img = document.createElement("img");
+        img.src = fileInfo.cdnUrl;
+        gallery.prepend(img);
+      } else if (fileInfo.mimeType.startsWith("video")) {
+        const video = document.createElement("video");
+        video.src = fileInfo.cdnUrl;
+        video.controls = true;
+        gallery.prepend(video);
+      }
     }
 
-    // Load all previously uploaded images
+    // Load all existing files from Uploadcare
     async function loadImages() {
       const res = await fetch(
         `https://api.uploadcare.com/files/?pub_key=${PUBLIC_KEY}&ordering=-datetime_uploaded`,
@@ -78,8 +87,12 @@
       const data = await res.json();
 
       data.results.forEach(file => {
-        if (file.is_image) {
-          addImage(file.cdn_url);
+        if (file.is_image || file.mime_type.startsWith("video")) {
+          addMedia({
+            isImage: file.is_image,
+            mimeType: file.mime_type,
+            cdnUrl: file.cdn_url
+          });
         }
       });
     }
