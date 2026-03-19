@@ -32,6 +32,93 @@
   <h1>Shared Memories</h1>
   <p>Upload and view photos & videos</p>
 
+  <input
+    type="hidden"
+    role="uploadcare-uploader"
+    data-public-key="a263a33adc38d6263eb1"
+    data-multiple="true"
+    id="uploader"
+  />
+
+  <div class="gallery" id="gallery"></div>
+
+  <script>
+    const gallery = document.getElementById("gallery");
+    const widget = uploadcare.Widget("#uploader");
+
+    // Load saved group
+    const savedGroup = localStorage.getItem("memoryGroup");
+
+    if (savedGroup) {
+      uploadcare.loadGroup(savedGroup).done(group => {
+        group.files().forEach(file => {
+          file.done(addMedia);
+        });
+      });
+    }
+
+    // Handle uploads
+    widget.onUploadComplete(function(info) {
+      if (info.isGroup) {
+        localStorage.setItem("memoryGroup", info.uuid);
+
+        info.files().forEach(file => {
+          file.done(addMedia);
+        });
+      } else {
+        localStorage.setItem("memoryGroup", info.uuid);
+        addMedia(info);
+      }
+    });
+
+    function addMedia(fileInfo) {
+      if (fileInfo.isImage) {
+        const img = document.createElement("img");
+        img.src = fileInfo.cdnUrl;
+        gallery.prepend(img);
+      } else if (fileInfo.mimeType && fileInfo.mimeType.startsWith("video")) {
+        const video = document.createElement("video");
+        video.src = fileInfo.cdnUrl;
+        video.controls = true;
+        gallery.prepend(video);
+      }
+    }
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+  <title>Memory Page</title>
+
+  <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 30px;
+      background: #fafafa;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .gallery img,
+    .gallery video {
+      width: 100%;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Shared Memories</h1>
+  <p>Upload and view photos & videos</p>
+
   <!-- Uploadcare uploader -->
   <input
     type="hidden"
