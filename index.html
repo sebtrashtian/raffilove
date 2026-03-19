@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Memory Page</title>
+
+  <!-- Uploadcare widget -->
+  <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 30px;
+      background: #fafafa;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .gallery img {
+      width: 100%;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Shared Memories</h1>
+  <p>Upload and view photos</p>
+
+  <!-- Upload button -->
+  <input
+    type="hidden"
+    role="uploadcare-uploader"
+    data-public-key="YOUR_PUBLIC_KEY"
+    data-multiple="true"
+    id="uploader"
+  />
+
+  <div class="gallery" id="gallery"></div>
+
+  <script>
+    const PUBLIC_KEY = "YOUR_PUBLIC_KEY";
+    const gallery = document.getElementById("gallery");
+
+    // Initialize uploader
+    const widget = uploadcare.Widget("#uploader");
+
+    widget.onUploadComplete(function(info) {
+      info.files().forEach(file => {
+        file.done(fileInfo => {
+          addImage(fileInfo.cdnUrl);
+        });
+      });
+    });
+
+    function addImage(url) {
+      const img = document.createElement("img");
+      img.src = url;
+      gallery.prepend(img);
+    }
+
+    // Load all previously uploaded images
+    async function loadImages() {
+      const res = await fetch(
+        `https://api.uploadcare.com/files/?pub_key=${PUBLIC_KEY}&ordering=-datetime_uploaded`,
+        {
+          headers: {
+            "Accept": "application/vnd.uploadcare-v0.7+json"
+          }
+        }
+      );
+
+      const data = await res.json();
+
+      data.results.forEach(file => {
+        if (file.is_image) {
+          addImage(file.cdn_url);
+        }
+      });
+    }
+
+    loadImages();
+  </script>
+</body>
+</html>
