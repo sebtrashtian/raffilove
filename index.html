@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Shared Memories</title>
   <style>
     body {
@@ -10,6 +10,11 @@
       padding: 30px;
       background: #fafafa;
       color: #222;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
     }
     .gallery {
       display: grid;
@@ -37,23 +42,12 @@
   <div class="gallery" id="gallery"></div>
 
   <script type="module">
+    // Firebase CDN imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      query,
-      orderBy
-    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-    import {
-      getStorage,
-      ref,
-      uploadBytes,
-      getDownloadURL
-    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
-    // Your Firebase config
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDeQYSlrxKrE1DL29UW7Ao34B25I0ypJ5s",
       authDomain: "raffilove-dcc1b.firebaseapp.com",
@@ -68,11 +62,12 @@
     const db = getFirestore(app);
     const storage = getStorage(app);
 
+    // DOM elements
     const fileInput = document.getElementById("fileInput");
     const uploadBtn = document.getElementById("uploadBtn");
     const gallery = document.getElementById("gallery");
 
-    // Add media element to gallery
+    // Add a media element to the gallery
     function addMedia(url, type) {
       if (type.startsWith("image")) {
         const img = document.createElement("img");
@@ -86,7 +81,7 @@
       }
     }
 
-    // Load gallery items from Firestore on page load
+    // Load existing gallery items from Firestore
     async function loadGallery() {
       gallery.innerHTML = "";
       const photosRef = collection(db, "photos");
@@ -98,7 +93,7 @@
       });
     }
 
-    // Upload selected files to Firebase Storage and save URLs in Firestore
+    // Handle upload button click
     uploadBtn.addEventListener("click", async () => {
       const files = fileInput.files;
       if (!files.length) {
@@ -108,9 +103,9 @@
       uploadBtn.disabled = true;
       uploadBtn.textContent = "Uploading...";
 
-      for (const file of files) {
-        const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
-        try {
+      try {
+        for (const file of files) {
+          const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
           await uploadBytes(storageRef, file);
           const url = await getDownloadURL(storageRef);
           await addDoc(collection(db, "photos"), {
@@ -119,18 +114,18 @@
             created: Date.now()
           });
           addMedia(url, file.type);
-        } catch (err) {
-          console.error("Upload failed", err);
-          alert("Upload failed: " + err.message);
         }
+      } catch (err) {
+        console.error("Upload failed", err);
+        alert("Upload failed: " + err.message);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "Upload";
+        fileInput.value = ""; // reset input
       }
-
-      uploadBtn.disabled = false;
-      uploadBtn.textContent = "Upload";
-      fileInput.value = ""; // reset input
     });
 
-    // Initial gallery load
+    // Load gallery on page load
     loadGallery();
   </script>
 </body>
