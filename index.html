@@ -47,12 +47,12 @@
     import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
-    // Firebase configuration
+    // Your Firebase config (use your new bucket)
     const firebaseConfig = {
       apiKey: "AIzaSyDeQYSlrxKrE1DL29UW7Ao34B25I0ypJ5s",
       authDomain: "raffilove-dcc1b.firebaseapp.com",
       projectId: "raffilove-dcc1b",
-      storageBucket: "raffilove-dcc1b.firebasestorage.app",
+      storageBucket: "raffilove-dcc1b.firebasestorage.app", // ✅ use new bucket
       messagingSenderId: "912342547949",
       appId: "1:912342547949:web:876dca2c3fb04f81803be4"
     };
