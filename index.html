@@ -1,15 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Shared Memories</title>
+<body>
+  <h1>Shared Memories</h1>
+  <p>Upload and view images/videos</p>
+
+  <input type="file" id="uploader" multiple />
+  <div class="gallery" id="gallery"></div>
 
   <script type="module">
-    // Import Firebase SDK modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
-    // 🔑 Your NEW Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDeQYSlrxKrE1DL29UW7Ao34B25I0ypJ5s",
       authDomain: "raffilove-dcc1b.firebaseapp.com",
@@ -19,7 +19,6 @@
       appId: "1:912342547949:web:876dca2c3fb04f81803be4"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const storage = getStorage(app);
@@ -27,7 +26,6 @@
     const gallery = document.getElementById("gallery");
     const uploader = document.getElementById("uploader");
 
-    // Display images/videos
     function addMedia(url, type) {
       if (type.startsWith("image")) {
         const img = document.createElement("img");
@@ -41,7 +39,6 @@
       }
     }
 
-    // Load all files from Firestore
     async function loadFiles() {
       const q = query(collection(db, "photos"), orderBy("created", "desc"));
       const snapshot = await getDocs(q);
@@ -53,7 +50,6 @@
 
     loadFiles();
 
-    // Handle new uploads
     uploader.addEventListener("change", async (e) => {
       const files = e.target.files;
       for (const file of files) {
@@ -70,20 +66,4 @@
       uploader.value = ""; // reset input
     });
   </script>
-
-  <style>
-    body { font-family: sans-serif; text-align: center; padding: 30px; background: #fafafa; }
-    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 30px; }
-    .gallery img, .gallery video { width: 100%; border-radius: 8px; }
-    .gallery video { max-height: 300px; }
-  </style>
-</head>
-
-<body>
-  <h1>Shared Memories</h1>
-  <p>Upload and view images/videos</p>
-
-  <input type="file" id="uploader" multiple />
-  <div class="gallery" id="gallery"></div>
 </body>
-</html>
