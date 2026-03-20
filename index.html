@@ -6,9 +6,96 @@
   <!-- Uploadcare widget -->
   <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDeQYSlrxKrE1DL29UW7Ao34B25I0ypJ5s",
+      authDomain: "raffilove-dcc1b.firebaseapp.com",
+      projectId: "raffilove-dcc1b",
+      storageBucket: "raffilove-dcc1b.appspot.com",
+      messagingSenderId: "912342547949",
+      appId: "1:912342547949:web:da0ac6f7e3827930803be4"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Gallery setup
+    const gallery = document.getElementById("gallery");
+    const widget = uploadcare.Widget("#uploader");
+
+    // Function to display media files
+    function addMedia(fileInfo) {
+      const type = fileInfo.mimeType || '';
+      const url = fileInfo.cdnUrl;
+
+      if (type.startsWith("image")) {
+        const img = document.createElement("img");
+        img.src = url;
+        gallery.prepend(img);
+      } else if (type.startsWith("video")) {
+        const video = document.createElement("video");
+        video.src = url;
+        video.controls = true;
+        gallery.prepend(video);
+      } else if (type.startsWith("audio")) {
+        const audio = document.createElement("audio");
+        audio.src = url;
+        audio.controls = true;
+        gallery.prepend(audio);
+      } else {
+        const link = document.createElement("a");
+        link.href = url;
+        link.textContent = fileInfo.name || "Download file";
+        link.target = "_blank";
+        gallery.prepend(link);
+      }
+    }
+
+    // Load all files from Firebase
+    async function loadFiles() {
+      const q = query(collection(db, "photos"), orderBy("created", "desc"));
+      const snapshot = await getDocs(q);
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        addMedia({ cdnUrl: data.url, mimeType: data.type, name: data.name });
+      });
+    }
+
+    loadFiles();
+
+    // Handle new uploads
+    widget.onUploadComplete(function(info) {
+      if (info.isGroup) {
+        info.files().forEach(file => {
+          file.done(async fileInfo => {
+            addMedia(fileInfo);
+            await addDoc(collection(db, "photos"), {
+              url: fileInfo.cdnUrl,
+              type: fileInfo.mimeType,
+              name: fileInfo.name || "",
+              created: Date.now()
+            });
+          });
+        });
+      } else {
+        addMedia(info);
+        addDoc(collection(db, "photos"), {
+          url: info.cdnUrl,
+          type: info.mimeType,
+          name: info.name || "",
+          created: Date.now()
+        });
+      }
+    });
+  </script>
 
   <style>
     body {
@@ -62,116 +149,5 @@
   />
 
   <div class="gallery" id="gallery"></div>
-
-  <script type="module">
-    // Paste your Firebase config from your project here
-    <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyDeQYSlrxKrE1DL29UW7Ao34B25I0ypJ5s",
-    authDomain: "raffilove-dcc1b.firebaseapp.com",
-    projectId: "raffilove-dcc1b",
-    storageBucket: "raffilove-dcc1b.firebasestorage.app",
-    messagingSenderId: "912342547949",
-    appId: "1:912342547949:web:da0ac6f7e3827930803be4"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDeQYSlrxKrE1DL29UW7Ao34B25I0ypJ5s",
-      authDomain: "affilove-dcc1b.firebaseapp.com",
-      projectId: "raffilove-dcc1b"
-    };
-
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      query,
-      orderBy
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const gallery = document.getElementById("gallery");
-    const widget = uploadcare.Widget("#uploader");
-
-    // Function to add a file to the gallery depending on type
-    function addMedia(fileInfo) {
-      const type = fileInfo.mimeType || '';
-      const url = fileInfo.cdnUrl;
-
-      if (type.startsWith("image")) {
-        const img = document.createElement("img");
-        img.src = url;
-        gallery.prepend(img);
-      } else if (type.startsWith("video")) {
-        const video = document.createElement("video");
-        video.src = url;
-        video.controls = true;
-        gallery.prepend(video);
-      } else if (type.startsWith("audio")) {
-        const audio = document.createElement("audio");
-        audio.src = url;
-        audio.controls = true;
-        gallery.prepend(audio);
-      } else {
-        // For other files (text, PDF, etc.) provide a download link
-        const link = document.createElement("a");
-        link.href = url;
-        link.textContent = fileInfo.name || "Download file";
-        link.target = "_blank";
-        gallery.prepend(link);
-      }
-    }
-
-    // Load all existing files from Firebase
-    async function loadFiles() {
-      const q = query(collection(db, "photos"), orderBy("created", "desc"));
-      const snapshot = await getDocs(q);
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        addMedia({ cdnUrl: data.url, mimeType: data.type, name: data.name });
-      });
-    }
-
-    loadFiles();
-
-    // Handle uploads
-    widget.onUploadComplete(function(info) {
-      if (info.isGroup) {
-        info.files().forEach(file => {
-          file.done(async fileInfo => {
-            addMedia(fileInfo);
-            await addDoc(collection(db, "photos"), {
-              url: fileInfo.cdnUrl,
-              type: fileInfo.mimeType,
-              name: fileInfo.name || "",
-              created: Date.now()
-            });
-          });
-        });
-      } else {
-        addMedia(info);
-        addDoc(collection(db, "photos"), {
-          url: info.cdnUrl,
-          type: info.mimeType,
-          name: info.name || "",
-          created: Date.now()
-        });
-      }
-    });
-  </script>
 </body>
 </html>
