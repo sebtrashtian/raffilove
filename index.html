@@ -72,25 +72,27 @@
     loadFiles();
 
     // Handle new uploads
-    widget.onUploadComplete(function(info) {
+    widget.onUploadComplete(async function(info) {
       if (info.isGroup) {
-        info.files().forEach(file => {
-          file.done(async fileInfo => {
-            addMedia(fileInfo);
-            await addDoc(collection(db, "photos"), {
-              url: fileInfo.cdnUrl,
-              type: fileInfo.mimeType,
-              name: fileInfo.name || "",
-              created: Date.now()
-            });
+    // Loop through each file in the group
+        const files = info.files();
+        for (const file of files) {
+          const fileInfo = await file.promise(); // get file info
+          addMedia(fileInfo);
+          await addDoc(collection(db, "photos"), {
+            url: fileInfo.cdnUrl,
+            type: fileInfo.mimeType,
+            name: fileInfo.name || "",
+            created: Date.now()
           });
-        });
+        }
       } else {
-        addMedia(info);
-        addDoc(collection(db, "photos"), {
-          url: info.cdnUrl,
-          type: info.mimeType,
-          name: info.name || "",
+        const fileInfo = await info.promise();
+        addMedia(fileInfo);
+        await addDoc(collection(db, "photos"), {
+          url: fileInfo.cdnUrl,
+          type: fileInfo.mimeType,
+          name: fileInfo.name || "",
           created: Date.now()
         });
       }
