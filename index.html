@@ -31,6 +31,7 @@ video { max-height: 180px; }
   padding: 10px;
   background: #eee;
   border-radius: 6px;
+  cursor: pointer;
 }
 
 #textModal {
@@ -57,7 +58,7 @@ video { max-height: 180px; }
 <button id="uploadBtn">Upload</button>
 
 <div>
-<textarea id="newTextContent"></textarea><br>
+<textarea id="newTextContent" placeholder="Enter text"></textarea><br>
 <input id="newTextName" placeholder="file.txt">
 <button id="createTextBtn">Create Text</button>
 </div>
@@ -99,7 +100,7 @@ let pageStack = [];
 let currentPage = 0;
 const pageSize = 50;
 
-// -------- TEXT MODAL --------
+// -------- TEXT MODAL (FIXED) --------
 
 async function openText(url) {
   const modal = document.getElementById("textModal");
@@ -110,6 +111,8 @@ async function openText(url) {
 
   try {
     const res = await fetch(url);
+    if (!res.ok) throw new Error("Fetch failed");
+
     let txt = await res.text();
 
     if (txt.length > 100000) {
@@ -117,8 +120,10 @@ async function openText(url) {
     }
 
     content.textContent = txt;
-  } catch {
-    content.textContent = "Failed to load file.";
+
+  } catch (err) {
+    console.error(err);
+    content.textContent = "Failed to load text file.";
   }
 }
 
@@ -142,10 +147,16 @@ function renderItem(data) {
     el.controls = true;
 
   } else {
+    // TEXT FIXED HERE
     el = document.createElement("a");
-    el.textContent = data.name;
+    el.href = "#";
+    el.textContent = data.name || "View Text File";
     el.className = "file-link";
-    el.onclick = () => openText(data.url);
+
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      openText(data.url);
+    });
   }
 
   gallery.appendChild(el);
@@ -183,6 +194,11 @@ async function loadPage(direction = "first") {
 
   gallery.innerHTML = "";
 
+  if (snap.empty) {
+    gallery.textContent = "No files found.";
+    return;
+  }
+
   snap.forEach(doc => renderItem(doc.data()));
 
   const last = snap.docs[snap.docs.length - 1];
@@ -203,14 +219,11 @@ document.getElementById("uploadBtn").onclick = async () => {
       continue;
     }
 
-    const path = `uploads/${Date.now()}_${file.name}`;
-    const storageRef = ref(storage, path);
-
+    const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
 
-    // attempt "date taken"
-    let takenDate = file.lastModified || Date.now();
+    const takenDate = file.lastModified || Date.now();
 
     await addDoc(collection(db, "photos"), {
       url,
