@@ -24,8 +24,6 @@ img, video, audio {
   border-radius: 8px;
 }
 
-video { max-height: 180px; }
-
 .file-link {
   display: block;
   padding: 10px;
@@ -58,12 +56,10 @@ video { max-height: 180px; }
 <button id="uploadBtn">Upload</button>
 
 <div>
-<textarea id="newTextContent" placeholder="Enter text"></textarea><br>
+<textarea id="newTextContent"></textarea><br>
 <input id="newTextName" placeholder="file.txt">
 <button id="createTextBtn">Create Text</button>
 </div>
-
-<div id="progress"></div>
 
 <div>
 <button id="prevBtn">Prev</button>
@@ -81,7 +77,7 @@ video { max-height: 180px; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, getBlob } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-storage.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyDeQYSlrxKrE1DL29UW7Ao34B25I0ypJ5s",
@@ -100,7 +96,7 @@ let pageStack = [];
 let currentPage = 0;
 const pageSize = 50;
 
-// -------- TEXT MODAL (FIXED) --------
+// -------- TEXT MODAL (FIXED FOR REAL) --------
 
 async function openText(url) {
   const modal = document.getElementById("textModal");
@@ -110,10 +106,9 @@ async function openText(url) {
   content.textContent = "Loading...";
 
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Fetch failed");
-
-    let txt = await res.text();
+    const fileRef = ref(storage, url);
+    const blob = await getBlob(fileRef);
+    let txt = await blob.text();
 
     if (txt.length > 100000) {
       txt = txt.slice(0, 100000) + "\n\n--- truncated ---";
@@ -147,10 +142,9 @@ function renderItem(data) {
     el.controls = true;
 
   } else {
-    // TEXT FIXED HERE
     el = document.createElement("a");
     el.href = "#";
-    el.textContent = data.name || "View Text File";
+    el.textContent = data.name;
     el.className = "file-link";
 
     el.addEventListener("click", (e) => {
@@ -183,7 +177,6 @@ async function loadPage(direction = "first") {
     } else {
       q = query(refCol, orderBy("sortDate", "desc"), limit(pageSize));
     }
-
   } else {
     q = query(refCol, orderBy("sortDate", "desc"), limit(pageSize));
     pageStack = [];
@@ -193,11 +186,6 @@ async function loadPage(direction = "first") {
   const snap = await getDocs(q);
 
   gallery.innerHTML = "";
-
-  if (snap.empty) {
-    gallery.textContent = "No files found.";
-    return;
-  }
 
   snap.forEach(doc => renderItem(doc.data()));
 
@@ -213,11 +201,7 @@ document.getElementById("uploadBtn").onclick = async () => {
   const files = document.getElementById("fileInput").files;
 
   for (const file of files) {
-
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Too big: " + file.name);
-      continue;
-    }
+    if (file.size > 10 * 1024 * 1024) continue;
 
     const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
     await uploadBytes(storageRef, file);
